@@ -1,42 +1,30 @@
-//@desc Get all contacts
-//@route GET /api/contacts
-//@access public
-const getContacts = (req, res) => {
-    res.status(200).json({ message: "Get all contacts" })
-};
+const getDb = require("../utils/database").getDb;
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
-//@desc Get all contacts
-//@route POST /api/contacts
-//@access public
-const createContact = (req, res) => {
-    console.log("OUTPUT: ", req.body)
-    const {name, email, phone} = req.body;
-    if(!name || !email || !phone) {
-        res.status(400);
-        throw new Error("ALL FIELDS ARE REQUIRED")
+exports.getIndex = (req, res) => {
+    res.set('Content-Type', 'text/html');
+    res.send(Buffer.from('<h1>HOME</h1>'));
+}
+
+exports.getCreateContact = (req, res) => {
+    res.render('create-contact', { pageTitle: "Create Contact" });
+}
+
+exports.postCreateContact = (req, res) => {
+    const db = getDb();
+    const { name, email, password } = req.body;
+    const contactsCollection = db.collection("users");
+
+    const userPassword = req.body.password;
+    let hashedPassword = bcrypt.hashSync(userPassword, 10);
+
+    try {
+        const result = contactsCollection.insertOne({ name, email, hashedPassword });
+    } catch (error) {
+        console.error("Something went wrong", error);
+        res.status(500).send("failed to create contact")
     }
-    res.status(200).json({ message: "Create Contact" })
-};
 
-//@desc Get all contacts
-//@route GET /api/contacts/id
-//@access public
-const getContact = (req, res) => {
-    res.status(200).json({ message: `Get contact for ${req.params.id}"` })
-};
-
-//@desc Get all contacts
-//@route GET /api/contacts/id
-//@access public
-const updateContact = (req, res) => {
-    res.status(200).json({ message: `Update contact for ${req.params.id}"` })
-};
-
-//@desc Get all contacts
-//@route GET /api/contacts/id
-//@access public
-const deleteContact = (req, res) => {
-    res.status(200).json({ message: `Update contact for ${req.params.id}"` })
-};
-
-module.exports = { getContacts, createContact, getContact, updateContact, deleteContact };
+    res.redirect('/');
+}
